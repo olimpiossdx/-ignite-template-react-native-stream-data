@@ -73,10 +73,10 @@ export function SignIn() {
               Otherwise, show Fontisto's twitch icon */}
           <SignInButton onPress={handelSignIn}>
             <SignInButtonIcon>
+              {!isLoggingIn ? <Fontisto name='twitch' /> : <ActivityIndicator size={20} color={theme.colors.white} />}
             </SignInButtonIcon>
-
             <SignInButtonText>
-              Entrar com Twitch
+              {!isLoggingIn ? 'Entrar com Twitch' : 'Entrando...'}
             </SignInButtonText>
           </SignInButton>
         </LoginInfo>

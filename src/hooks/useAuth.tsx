@@ -61,26 +61,31 @@ function AuthProvider({ children }: AuthProviderData) {
       // assemble authUrl with twitchEndpoint authorization, client_id, 
       // redirect_uri, response_type, scope, force_verify and state
 
-      console.log('authUrl', authUrl);
       // call startAsync with authUrl
-      const response = await startAsync({ authUrl });
-      console.log('response', response);
-
+      const authResponse = await startAsync({ authUrl });
       // verify if startAsync response.type equals "success" and response.params.error differs from "access_denied"
       // if true, do the following:
 
       // verify if startAsync response.params.state differs from STATE
       // if true, do the following:
       // throw an error with message "Invalid state value"
+      if ((authResponse as any).params.state !== STATE) {
+        throw new Error("Invalid state value");
+      }
 
       // add access_token to request's authorization header
+      api.defaults.headers.authorization = `Bearer ${(authResponse as any).params.access_token}`;
 
       // call Twitch API's users route
+      const userResponse = await api.get('/users');
+      setUser(userResponse.data.data[0]);
+      setUserToken((authResponse as any).params.access_token);
 
       // set user state with response from Twitch API's route "/users"
       // set userToken state with response's access_token from startAsync
     } catch (error) {
       // throw an error
+      throw new Error('Erro ao logar.');
     } finally {
       // set isLoggingIn to false
       setIsLoggingIn(false);
@@ -93,13 +98,17 @@ function AuthProvider({ children }: AuthProviderData) {
       // set isLoggingOut to true
 
       // call revokeAsync with access_token, client_id and twitchEndpoint revocation
+      await revokeAsync({ token: userToken, clientId: CLIENT_ID }, { revocationEndpoint: twitchEndpoints.revocation });
     } catch (error) {
     } finally {
       // set user state to an empty User object
       setUser({} as User);
+
       // set userToken state to an empty string
       setUserToken('');
+
       // remove "access_token" from request's authorization header
+      delete api.defaults.headers.authorization;
 
       // set isLoggingOut to false
       setIsLoggingOut(false);
